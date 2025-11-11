@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
 
 function Register() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    password: ""
+    password: "",
   });
 
   const handleChange = (e) => {
@@ -15,10 +16,11 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-const res = await axios.post("https://career-path-backend-production.up.railway.app/api/users/register", formData);
-
+      const res = await axios.post("http://localhost:5000/api/users/register", formData);
       alert(res.data.message);
-      setFormData({ name: "", email: "", password: "" }); // clear form
+      if (res.data.message === "User registered successfully") {
+        window.location.href = "/login";
+      }
     } catch (error) {
       alert(error.response?.data?.message || "Error registering user");
     }
@@ -52,19 +54,18 @@ const res = await axios.post("https://career-path-backend-production.up.railway.
         />
         <button type="submit" style={styles.button}>Register</button>
       </form>
+
+      <p style={{ marginTop: "15px" }}>
+        Already have an account?{" "}
+        <Link to="/login" style={styles.link}>Login here</Link>
+      </p>
     </div>
   );
 }
 
 const styles = {
-  container: {
-    marginTop: "40px",
-    textAlign: "center",
-  },
-  form: {
-    display: "inline-block",
-    textAlign: "left",
-  },
+  container: { marginTop: "40px", textAlign: "center" },
+  form: { display: "inline-block", textAlign: "left" },
   input: {
     display: "block",
     margin: "10px 0",
@@ -76,11 +77,15 @@ const styles = {
   button: {
     marginTop: "10px",
     padding: "10px 20px",
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#28a745",
     color: "white",
     border: "none",
     borderRadius: "8px",
     cursor: "pointer",
+  },
+  link: {
+    color: "#007bff",
+    textDecoration: "none",
   },
 };
 

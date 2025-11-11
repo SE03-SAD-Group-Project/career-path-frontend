@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -14,17 +16,21 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-const res = await axios.post("https://career-path-backend-production.up.railway.app/api/users/login", formData);
-      
-      // Show message
+      const res = await axios.post(
+        "https://career-path-backend-production.up.railway.app/api/users/login",
+        formData
+      );
+
       alert(res.data.message);
 
-      // ✅ If login was successful, save user info & redirect
       if (res.data.message === "Login successful") {
         localStorage.setItem("user", JSON.stringify(res.data.user));
-        window.location.href = "/dashboard"; // Redirect to dashboard
-      }
 
+        // ✅ Delay a little to ensure state updates before redirect
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 500);
+      }
     } catch (error) {
       alert(error.response?.data?.message || "Error logging in");
     }
@@ -56,14 +62,8 @@ const res = await axios.post("https://career-path-backend-production.up.railway.
 }
 
 const styles = {
-  container: {
-    marginTop: "40px",
-    textAlign: "center",
-  },
-  form: {
-    display: "inline-block",
-    textAlign: "left",
-  },
+  container: { marginTop: "40px", textAlign: "center" },
+  form: { display: "inline-block", textAlign: "left" },
   input: {
     display: "block",
     margin: "10px 0",

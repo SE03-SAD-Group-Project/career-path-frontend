@@ -1,21 +1,27 @@
-import React, { useState } from "react";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import Register from "./Register";
 import Login from "./Login";
-import "./App.css";
+import Dashboard from "./Dashboard";
 
 function App() {
-  const [page, setPage] = useState("register");
-
   return (
-    <div className="App">
-      <h1>Career Path Recommendation System</h1>
-      <div>
-        <button onClick={() => setPage("register")}>Register</button>
-        <button onClick={() => setPage("login")}>Login</button>
-      </div>
+    <Router>
+      <div style={{ textAlign: "center" }}>
+        <h1>Career Path Recommendation System</h1>
+        <div style={{ marginBottom: "20px" }}>
+          <Link to="/register"><button>Register</button></Link>
+          <Link to="/login" style={{ marginLeft: "10px" }}><button>Login</button></Link>
+        </div>
 
-      {page === "register" ? <Register /> : <Login />}
-    </div>
+        <Routes>
+          <Route path="/" element={<Register />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

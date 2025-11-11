@@ -1,20 +1,28 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
-  const user = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user"));
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    navigate("/login");
-  };
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+    }
+  }, [navigate, user]);
 
   return (
     <div style={styles.container}>
-      <h1>Welcome, {user?.name || "Guest"} 👋</h1>
-      <p>Email: {user?.email}</p>
-      <button style={styles.button} onClick={handleLogout}>
+      <h1>Welcome, {user?.name || "Guest"} 🎉</h1>
+      <p>Your email: {user?.email}</p>
+
+      <button
+        onClick={() => {
+          localStorage.removeItem("user");
+          navigate("/login");
+        }}
+        style={styles.button}
+      >
         Logout
       </button>
     </div>
@@ -23,13 +31,13 @@ function Dashboard() {
 
 const styles = {
   container: {
-    marginTop: "60px",
     textAlign: "center",
+    marginTop: "100px",
+    fontFamily: "Arial",
   },
   button: {
-    marginTop: "20px",
     padding: "10px 20px",
-    backgroundColor: "#E74C3C",
+    backgroundColor: "#e74c3c",
     color: "white",
     border: "none",
     borderRadius: "8px",
