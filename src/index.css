@@ -145,3 +145,11 @@ a {
     transform: translate3d(10px, -20px, 0);
   }
 }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ai-result-animate {
+  animation: fadeIn 0.5s ease-out;
+}

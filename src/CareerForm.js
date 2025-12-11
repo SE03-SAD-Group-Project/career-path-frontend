@@ -1,97 +1,150 @@
+// src/CareerForm.js
 import React, { useState } from "react";
 import apiClient from "./apiClient";
-import theme from "./theme";
+import { jsPDF } from "jspdf";
 
-function CareerForm() {
+function parseList(input) {
+  if (!input) return [];
+  return input
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+export default function CareerForm() {
   const [skills, setSkills] = useState("");
   const [interests, setInterests] = useState("");
-  const [workStyle, setWorkStyle] = useState("analytical");
+  const [workStyle, setWorkStyle] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [result, setResult] = useState(null);
 
-  const parseList = (value) =>
-    value
-      .split(",")
-      .map((item) => item.trim().toLowerCase())
-      .filter(Boolean);
+  // ⭐ PDF Download Function
+  const downloadPDF = (data) => {
+    const doc = new jsPDF();
 
-  const submitCareerForm = async () => {
+    doc.setFontSize(22);
+    doc.text(data.careerTitle, 10, 20);
+
+    doc.setFontSize(14);
+    doc.text("Why this career?", 10, 35);
+    doc.text(doc.splitTextToSize(data.reasoning, 180), 10, 43);
+
+    doc.text("Motivation:", 10, 75);
+    doc.text(doc.splitTextToSize(data.motivation, 180), 10, 83);
+
+    doc.text("Recommended Skills:", 10, 115);
+    data.suggestedSkills.forEach((skill, i) => {
+      doc.text(`• ${skill}`, 14, 125 + i * 8);
+    });
+
+    doc.save(`${data.careerTitle}_recommendation.pdf`);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setResult(null);
+    setLoading(true);
+
     try {
-      const res = await apiClient.post("/careers/recommend", {
+      const res = await apiClient.post("/ai/recommend", {
         skills: parseList(skills),
         interests: parseList(interests),
         workStyle,
       });
 
-      setResult(res.data.recommendedCareer);
+      setResult(res.data.aiResult);
     } catch (err) {
-      alert("Error generating recommendation");
+      console.error(err);
+      setError(
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Something went wrong generating a recommendation."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={styles.wrapper}>
-      <div style={styles.header}>
-        <p style={styles.badge}>Smart suggestions</p>
-        <h2 style={styles.title}>Career Recommendation</h2>
-        <p style={styles.helper}>Describe your strengths, interests, and preferred work style.</p>
-      </div>
+    <div style={styles.container}>
+      <h2 style={styles.title}>Get Your Career Recommendation</h2>
 
-      <div style={styles.fields}>
+      <form onSubmit={handleSubmit} style={styles.form}>
         <label style={styles.label}>
-          Skills
+          Skills (comma separated)
           <input
-            placeholder="e.g., javascript, public speaking, data analysis"
+            style={styles.input}
+            placeholder="javascript, design, communication"
             value={skills}
             onChange={(e) => setSkills(e.target.value)}
-            style={styles.input}
           />
-          <span style={styles.hint}>Use commas to separate multiple skills.</span>
         </label>
 
         <label style={styles.label}>
-          Interests
+          Interests (comma separated)
           <input
-            placeholder="e.g., design, healthcare, teaching"
+            style={styles.input}
+            placeholder="ai, frontend, teaching"
             value={interests}
             onChange={(e) => setInterests(e.target.value)}
-            style={styles.input}
           />
-          <span style={styles.hint}>Tell us what motivates you or sparks curiosity.</span>
         </label>
 
         <label style={styles.label}>
-          Preferred work style
-          <div style={styles.selectWrap}>
-            <select
-              value={workStyle}
-              onChange={(e) => setWorkStyle(e.target.value)}
-              style={styles.select}
-            >
-              <option value="analytical">Analytical</option>
-              <option value="creative">Creative</option>
-              <option value="social">Social</option>
-              <option value="technical">Technical</option>
-            </select>
-            <div style={styles.selectGlow} />
-          </div>
+          Work style (optional)
+          <input
+            style={styles.input}
+            placeholder="remote, team player, independent..."
+            value={workStyle}
+            onChange={(e) => setWorkStyle(e.target.value)}
+          />
         </label>
-      </div>
 
-      <div style={styles.actions}>
-        <button onClick={submitCareerForm} style={styles.button} className="button-hover">
-          Get recommendation
+        <button type="submit" style={styles.button} disabled={loading}>
+          {loading ? "Getting recommendation..." : "Get Recommendation"}
         </button>
-        <p style={styles.caption}>Powered by your unique mix of talents and preferences.</p>
-      </div>
+      </form>
 
+      {error && <div style={styles.error}>{error}</div>}
+
+      {/* ⭐ PREMIUM AI RESULT BOX */}
       {result && (
-        <div style={styles.resultCard} className="card-animate">
-          <div style={styles.resultTop}>
-            <div style={styles.resultBadge}>Result</div>
-            <span style={styles.status}>Personalized</span>
+        <div style={styles.resultBox} className="ai-result-animate">
+
+          <div style={styles.resultHeader}>
+            <span style={styles.resultIcon}>🎯</span>
+            <h3 style={styles.resultTitle}>{result.careerTitle}</h3>
           </div>
-          <p style={styles.resultTitle}>Recommended career</p>
-          <p style={styles.resultValue}>{result}</p>
+
+          <p style={styles.resultDescription}>
+            <strong style={styles.sectionTitle}>Why this career?</strong><br />
+            {result.reasoning}
+          </p>
+
+          <p style={styles.resultDescription}>
+            <strong style={styles.sectionTitle}>Motivation</strong><br />
+            {result.motivation}
+          </p>
+
+          <div style={{ marginTop: 16 }}>
+            <strong style={styles.sectionTitle}>Recommended Skills to Learn</strong>
+
+            <div style={styles.skillWrap}>
+              {result.suggestedSkills.map((skill, index) => (
+                <span key={index} style={styles.skillPill}>
+                  ⚡ {skill}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* ⭐ PDF Button */}
+          <button style={styles.pdfButton} onClick={() => downloadPDF(result)}>
+            📄 Download as PDF
+          </button>
+
         </div>
       )}
     </div>
@@ -99,125 +152,124 @@ function CareerForm() {
 }
 
 const styles = {
-  wrapper: {
-    textAlign: "left",
-    color: theme.colors.textPrimary,
-    display: "grid",
-    gap: theme.spacing.md,
-  },
-  header: {
-    display: "grid",
-    gap: "6px",
-  },
-  badge: {
-    display: "inline-block",
-    padding: "6px 12px",
-    borderRadius: theme.radii.md,
-    background: theme.gradients.glassEdge,
-    color: theme.colors.textSecondary,
-    border: `1px solid ${theme.colors.border}`,
-    fontSize: "12px",
-    fontWeight: 700,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
+  container: {
+    width: "100%",
+    padding: 24,
+    borderRadius: 16,
+    background: "rgba(10,10,25,0.85)",
+    color: "#fff",
   },
   title: {
-    margin: 0,
-    fontSize: "22px",
-    color: theme.colors.textPrimary,
+    fontSize: 22,
+    marginBottom: 16,
   },
-  helper: {
-    margin: 0,
-    color: theme.colors.textSecondary,
-    fontSize: "14px",
-  },
-  fields: {
-    display: "grid",
-    gap: theme.spacing.sm,
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
   },
   label: {
-    display: "grid",
-    gap: theme.spacing.xs,
-    fontSize: "14px",
-    color: theme.colors.textPrimary,
-    letterSpacing: "0.2px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    fontSize: 14,
   },
   input: {
-    ...theme.input(),
-  },
-  selectWrap: {
-    position: "relative",
-  },
-  select: {
-    ...theme.input(),
-    appearance: "none",
-    backgroundImage: "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
-  },
-  selectGlow: {
-    position: "absolute",
-    inset: 2,
-    borderRadius: theme.radii.md,
-    pointerEvents: "none",
-    boxShadow: "0 0 0 1px rgba(103, 232, 249, 0.2)",
-    filter: "blur(8px)",
-    opacity: 0.5,
-  },
-  hint: {
-    color: theme.colors.textSecondary,
-    fontSize: "12px",
-  },
-  actions: {
-    display: "grid",
-    gap: "6px",
-    alignItems: "center",
+    padding: "10px 12px",
+    borderRadius: 8,
+    border: "1px solid #444",
+    background: "rgba(0,0,0,0.3)",
+    color: "#fff",
   },
   button: {
-    ...theme.button("primary"),
+    marginTop: 8,
+    padding: "10px 14px",
+    borderRadius: 999,
+    border: "none",
+    background: "#4ade80",
     color: "#041024",
-    width: "100%",
-    textAlign: "center",
+    fontWeight: 600,
+    cursor: "pointer",
   },
-  caption: {
-    margin: 0,
-    color: theme.colors.textSecondary,
-    fontSize: "13px",
+  error: {
+    marginTop: 12,
+    padding: 10,
+    borderRadius: 8,
+    background: "rgba(255,0,0,0.1)",
+    color: "#ff8080",
+    fontSize: 14,
   },
-  resultCard: {
-    marginTop: "8px",
-    ...theme.glassPanel("18px"),
-    background: "linear-gradient(145deg, rgba(16,185,129,0.16), rgba(14,165,233,0.12))",
+
+  // ⭐ NEW — PREMIUM RESULT BOX
+  resultBox: {
+    marginTop: 24,
+    padding: "24px 28px",
+    borderRadius: 20,
+    background: "rgba(15, 23, 42, 0.75)",
+    border: "1px solid rgba(99,102,241,0.35)",
+    boxShadow: "0 0 20px rgba(99,102,241,0.25)",
+    backdropFilter: "blur(14px)",
   },
-  resultTop: {
+
+  resultHeader: {
     display: "flex",
-    justifyContent: "space-between",
     alignItems: "center",
+    gap: 12,
+    marginBottom: 12,
   },
-  resultBadge: {
-    display: "inline-block",
-    padding: "6px 12px",
-    borderRadius: theme.radii.md,
-    background: "rgba(16,185,129,0.2)",
-    color: "#bbf7d0",
-    border: "1px solid rgba(16,185,129,0.35)",
-    fontSize: "11px",
-    fontWeight: 700,
-    textTransform: "uppercase",
+
+  resultIcon: {
+    fontSize: 32,
   },
-  status: {
-    color: theme.colors.textSecondary,
-    fontSize: "12px",
-  },
+
   resultTitle: {
-    margin: "12px 0 2px",
-    fontSize: "14px",
-    color: "#dcfce7",
-  },
-  resultValue: {
+    fontSize: 24,
+    fontWeight: "bold",
     margin: 0,
-    fontSize: "20px",
-    fontWeight: 800,
-    color: "#f0fdf4",
+    color: "#ffffff",
+  },
+
+  resultDescription: {
+    marginTop: 14,
+    fontSize: 15,
+    lineHeight: 1.55,
+    opacity: 0.9,
+    color: "#e2e8f0",
+  },
+
+  sectionTitle: {
+    color: "#8ab4ff",
+    fontWeight: 700,
+    fontSize: 15,
+  },
+
+  skillWrap: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 10,
+  },
+
+  skillPill: {
+    padding: "8px 14px",
+    background: "rgba(56,189,248,0.15)",
+    borderRadius: 12,
+    fontSize: 14,
+    color: "#7dd3fc",
+    border: "1px solid rgba(125,211,252,0.3)",
+    boxShadow: "0 0 8px rgba(125,211,252,0.25)",
+  },
+
+  // ⭐ PDF BUTTON STYLE
+  pdfButton: {
+    marginTop: 20,
+    padding: "10px 16px",
+    background: "#3b82f6",
+    color: "white",
+    border: "none",
+    borderRadius: 10,
+    cursor: "pointer",
+    fontWeight: 600,
+    transition: "0.2s",
   },
 };
-
-export default CareerForm;

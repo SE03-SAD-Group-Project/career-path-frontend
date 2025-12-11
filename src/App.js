@@ -1,3 +1,5 @@
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminCareers from "./pages/AdminCareers";
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Register from "./Register";
@@ -24,20 +26,21 @@ function App() {
               A futuristic, calm space to create an account, log in, and uncover tailored
               career recommendations crafted around your strengths.
             </p>
-            <div style={styles.pills}>
-              <span style={styles.pill}>Glassmorphic UI</span>
-              <span style={styles.pill}>Neon-guided flow</span>
-              <span style={styles.pill}>Responsive grid</span>
-            </div>
           </header>
 
           <main style={styles.content}>
             <Routes>
+              {/* User-facing routes */}
               <Route path="/" element={<Register />} />
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />
               <Route path="/dashboard" element={<Dashboard />} />
+
+              {/* Admin routes (no auth yet – optional later) */}
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/careers" element={<AdminCareers />} />
             </Routes>
+
           </main>
         </div>
       </div>
