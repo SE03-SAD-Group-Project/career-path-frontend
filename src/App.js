@@ -1,3 +1,4 @@
+import GrowthTracker from "./pages/GrowthTracker";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminCareers from "./pages/AdminCareers";
 import React from "react";
@@ -7,6 +8,7 @@ import Login from "./Login";
 import Dashboard from "./Dashboard";
 import Navbar from "./components/Navbar";
 import theme from "./theme";
+
 
 function App() {
   return (
@@ -35,6 +37,8 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/growth" element={<GrowthTracker />} />
+
 
               {/* Admin routes (no auth yet – optional later) */}
               <Route path="/admin" element={<AdminDashboard />} />

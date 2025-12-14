@@ -21,7 +21,6 @@ function Dashboard() {
 
   return (
     <div style={styles.page}>
-
       {/* ⭐ FULL-WIDTH PROFILE CARD */}
       <div style={styles.fullWidthCard} className="card-animate">
         <div style={styles.profileHeader}>
@@ -33,25 +32,37 @@ function Dashboard() {
             </div>
           </div>
 
-          <button
-            onClick={() => {
-              localStorage.removeItem("user");
-              navigate("/login");
-            }}
-            style={styles.logoutBtn}
-            className="button-hover"
-          >
-            Logout
-          </button>
+          {/* ACTION BUTTONS */}
+          <div style={styles.actionRow}>
+            <button
+              onClick={() => navigate("/growth")}
+              style={styles.growthBtn}
+              className="button-hover"
+            >
+              📈 Growth Tracker
+            </button>
+
+            <button
+              onClick={() => {
+                localStorage.removeItem("user");
+                navigate("/login");
+              }}
+              style={styles.logoutBtn}
+              className="button-hover"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         <div style={styles.pillRow}>
           <span style={styles.pill}>Profile synced</span>
           <span style={styles.pillSecondary}>Personalized journey</span>
+          <span style={styles.pillSuccess}>AI Growth Tracking Active</span>
         </div>
       </div>
 
-      {/* ⭐ FULL-WIDTH CAREER RECOMMENDATION SECTION */}
+      {/* ⭐ FULL-WIDTH CAREER RECOMMENDATION */}
       <div style={styles.wideSection} className="card-animate">
         <CareerForm fullWidth />
       </div>
@@ -90,12 +101,19 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: theme.spacing.sm,
+    gap: 16,
   },
 
   profileLeft: {
     display: "flex",
     alignItems: "center",
     gap: theme.spacing.sm,
+  },
+
+  actionRow: {
+    display: "flex",
+    gap: 10,
+    alignItems: "center",
   },
 
   avatar: {
@@ -127,7 +145,7 @@ const styles = {
     display: "flex",
     gap: "10px",
     flexWrap: "wrap",
-    marginBottom: theme.spacing.sm,
+    marginTop: theme.spacing.sm,
   },
 
   pill: {
@@ -150,10 +168,24 @@ const styles = {
     fontWeight: 700,
   },
 
+  pillSuccess: {
+    padding: "8px 12px",
+    background: "rgba(34,197,94,0.16)",
+    borderRadius: "999px",
+    border: "1px solid rgba(34,197,94,0.35)",
+    color: "#bbf7d0",
+    fontSize: "12px",
+    fontWeight: 700,
+  },
+
+  growthBtn: {
+    ...theme.button("primary"),
+    whiteSpace: "nowrap",
+  },
+
   logoutBtn: {
     ...theme.button("danger"),
     color: "#0b1224",
-    width: "fit-content",
     whiteSpace: "nowrap",
   },
 };
