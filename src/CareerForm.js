@@ -60,7 +60,7 @@ export default function CareerForm() {
       setError(
         err.response?.data?.error ||
         err.response?.data?.message ||
-        "Something went wrong generating a recommendation."
+        "Something went wrong generating another recommendation."
       );
     } finally {
       setLoading(false);
