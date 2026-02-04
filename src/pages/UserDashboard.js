@@ -38,7 +38,31 @@ function UserDashboard() {
       console.error("Error loading dashboard data:", e);
     }
   };
+// Add this state
+  const [uploading, setUploading] = useState(false);
 
+  // Add this function
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("resume", file);
+    formData.append("userId", user.id);
+
+    try {
+      // Make sure this URL matches your backend
+      const res = await axios.post("http://localhost:5000/api/users/upload-resume", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      alert(`AI Analysis Complete! You have been tagged as: ${res.data.role}`);
+    } catch (err) {
+      alert("Upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  };
   const handleDecision = async (requestId, decision) => {
     try {
       const status = decision === 'accept' ? 'ACCEPTED' : 'DENIED';
@@ -81,7 +105,24 @@ function UserDashboard() {
           <span style={styles.pillSuccess}>AI Growth Tracking Active</span>
         </div>
       </div>
-
+    {/* 5. AI RESUME PARSER */}
+      <div style={styles.wideSection} className="card-animate">
+        <h3 style={{...styles.title, color: "#a78bfa", marginBottom: 15}}>
+          🧠 AI Resume Analyzer
+        </h3>
+        <p style={{color: theme.colors.textSecondary, marginBottom: 20}}>
+          Upload your resume (PDF). Our AI will scan it and automatically match you with recruiters looking for your skills.
+        </p>
+        
+        <input 
+          type="file" 
+          accept=".pdf"
+          onChange={handleFileUpload}
+          style={{color: "white"}} 
+        />
+        
+        {uploading && <p style={{color: "#a78bfa", marginTop: 10}}>✨ AI is analyzing your resume...</p>}
+      </div>
       {/* 2. PENDING REQUESTS */}
       {requests.filter(r => r.status === 'PENDING_EMPLOYEE').length > 0 && (
         <div style={styles.wideSection} className="card-animate">

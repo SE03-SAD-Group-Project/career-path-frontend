@@ -1,14 +1,12 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import apiClient from "./apiClient";
+import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";
 import theme from "./theme";
 
-function Login() {
+export default function Login() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -16,135 +14,142 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
-      const res = await apiClient.post("/users/login", formData);
+      const res = await axios.post("http://localhost:5000/api/users/login", formData);
+      
+      // 1. Save User Data
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      if (res.data.message === "Login successful") {
-        const user = res.data.user;
-        localStorage.setItem("user", JSON.stringify(user));
+      // 2. ⭐ REDIRECTION LOGIC (The Fix) ⭐
+      const role = res.data.user.role; // Get role from backend
 
-        // --- ROLE BASED REDIRECT ---
-        if (user.role === "employer") {
-          navigate("/employer-dashboard");
-        } else if (user.role === "admin") {
-          navigate("/admin");
-        } else {
-          // Default to student/user dashboard
-          navigate("/user-dashboard");
-        }
-        // ---------------------------
+      if (role === "admin") {
+        navigate("/admin");
+      } else if (role === "employer") {
+        navigate("/employer-dashboard"); // ✅ Now Employers go here
       } else {
-        alert(res.data.message);
+        navigate("/user-dashboard"); // Students go here
       }
-    } catch (error) {
-      alert(error.response?.data?.message || "Error logging in");
+
+    } catch (err) {
+      alert(err.response?.data?.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={styles.page}>
+    <div style={styles.container}>
       <div style={styles.card} className="card-animate">
-        <div style={styles.cardHeader}>
-          <p style={styles.badge}>Welcome back</p>
-          <h2 style={styles.title}>Log in to continue</h2>
-          <p style={styles.lead}>Access saved preferences and generate fresh guidance.</p>
-        </div>
-
+        <h2 style={styles.title}>Login</h2>
+        <p style={styles.subtitle}>Welcome back to CareerCluster</p>
+        
         <form onSubmit={handleSubmit} style={styles.form}>
-          <label style={styles.label}>
-            Email
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Email</label>
             <input
               name="email"
-              placeholder="you@example.com"
-              value={formData.email}
+              type="email"
+              placeholder="Enter your email"
               onChange={handleChange}
               style={styles.input}
+              required
             />
-          </label>
-
-          <label style={styles.label}>
-            Password
+          </div>
+          
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Password</label>
             <input
               name="password"
               type="password"
-              placeholder="Enter your password"
-              value={formData.password}
+              placeholder="••••••••"
               onChange={handleChange}
               style={styles.input}
+              required
             />
-          </label>
+          </div>
 
-          <button type="submit" style={styles.button} className="button-hover">
-            Login
+          <button type="submit" style={styles.button} disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
+
+        <p style={styles.footerText}>
+          Don't have an account? <Link to="/register" style={styles.link}>Sign up</Link>
+        </p>
       </div>
     </div>
   );
 }
 
 const styles = {
-  page: {
+  container: {
+    minHeight: "100vh",
     display: "flex",
+    alignItems: "center",
     justifyContent: "center",
-    padding: "10px 0 40px",
+    padding: "20px"
   },
   card: {
-    ...theme.glassPanel("28px"),
-    width: "400px",
-    color: theme.colors.textPrimary,
-    position: "relative",
-  },
-  cardHeader: {
-    textAlign: "left",
-    marginBottom: theme.spacing.md,
+    ...theme.glassPanel("24px"),
+    width: "100%",
+    maxWidth: "400px",
+    padding: "40px",
+    textAlign: "center"
   },
   title: {
+    fontSize: "28px",
+    fontWeight: "700",
     color: theme.colors.textPrimary,
-    margin: "6px 0 6px",
-    fontSize: "24px",
-    letterSpacing: "0.2px",
+    marginBottom: "10px"
   },
-  lead: {
-    margin: 0,
+  subtitle: {
     color: theme.colors.textSecondary,
-    fontSize: "14px",
-    lineHeight: 1.5,
-  },
-  badge: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "6px",
-    padding: "6px 12px",
-    borderRadius: theme.radii.md,
-    background: theme.gradients.glassEdge,
-    border: `1px solid ${theme.colors.border}`,
-    color: theme.colors.textSecondary,
-    fontSize: "12px",
-    letterSpacing: "0.1em",
-    textTransform: "uppercase",
+    marginBottom: "30px",
+    fontSize: "14px"
   },
   form: {
-    display: "grid",
-    gap: theme.spacing.sm,
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px"
+  },
+  inputGroup: {
+    textAlign: "left"
   },
   label: {
-    display: "grid",
-    gap: theme.spacing.xs,
-    textAlign: "left",
-    fontSize: "14px",
-    color: theme.colors.textPrimary,
-    letterSpacing: theme.typography.letter,
+    display: "block",
+    color: theme.colors.textSecondary,
+    fontSize: "12px",
+    marginBottom: "8px",
+    fontWeight: "600"
   },
   input: {
-    ...theme.input(),
+    width: "100%",
+    padding: "12px 16px",
+    background: "rgba(255, 255, 255, 0.05)",
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.radii.md,
+    color: "white",
+    fontSize: "14px",
+    outline: "none",
+    transition: "border-color 0.2s"
   },
   button: {
     ...theme.button("primary"),
     width: "100%",
-    marginTop: theme.spacing.xs,
-    color: "#041024",
+    marginTop: "10px"
   },
+  footerText: {
+    marginTop: "20px",
+    color: theme.colors.textSecondary,
+    fontSize: "14px"
+  },
+  link: {
+    color: theme.colors.accent,
+    textDecoration: "none",
+    fontWeight: "600"
+  }
 };
-
-export default Login;

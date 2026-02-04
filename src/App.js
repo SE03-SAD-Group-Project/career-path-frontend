@@ -2,18 +2,20 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import theme from "./theme";
-
+import JobMatch from "./pages/JobMatch";
 // Import Pages
 import Register from "./Register";
 import Login from "./Login";
 import JDMatch from "./pages/JDMatch";
 import GrowthTracker from "./pages/GrowthTracker";
 
+
 // Import NEW Dashboards
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminCareers from "./pages/AdminCareers";
 import UserDashboard from "./pages/UserDashboard";     // <--- Using the New File
 import EmployerDashboard from "./pages/EmployerDashboard"; 
+
 
 function App() {
   return (
@@ -41,6 +43,10 @@ function App() {
               <Route path="/" element={<Register />} />
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />
+               <Route path="/jd-match" element={<JobMatch />} />
+
+
+
               
               {/* Feature Routes */}
               <Route path="/growth" element={<GrowthTracker />} />

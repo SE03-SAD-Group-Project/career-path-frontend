@@ -5,6 +5,7 @@ import theme from "../theme";
 export default function EmployerDashboard() {
   const [candidates, setCandidates] = useState([]);
   const [user, setUser] = useState(null);
+  const [searchTerm, setSearchTerm] = useState(""); // State for the filter
 
   useEffect(() => {
     // 1. Check Login
@@ -54,13 +55,47 @@ export default function EmployerDashboard() {
       {/* Candidates Grid */}
       <div style={styles.wideSection} className="card-animate">
         <h3 style={{...styles.title, marginBottom: 20}}>Available Candidates</h3>
+
+        {/* 🔍 NEW: Search / Filter Input */}
+        <div style={{marginBottom: 20}}>
+            <input 
+              type="text" 
+              placeholder="🔍 Filter by Role (e.g., UI Engineer, Data Scientist)..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={styles.searchInput}
+            />
+        </div>
+
         <div style={styles.grid}>
-          {candidates.map((c) => (
+          {candidates
+            .filter((c) => {
+                // ⭐ FILTER LOGIC:
+                // If search is empty, show everyone.
+                if (!searchTerm) return true;
+                // Otherwise, check if their AI Role or Name matches the search
+                const role = c.seekingRole || "";
+                return role.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                       c.name.toLowerCase().includes(searchTerm.toLowerCase());
+            })
+            .map((c) => (
             <div key={c._id} style={styles.candidateCard}>
               <div>
                 <div style={styles.avatar}>{c.name?.[0]}</div>
                 <h4 style={{ margin: "10px 0 5px", color: theme.colors.textPrimary }}>{c.name}</h4>
-                <p style={{ margin: 0, color: theme.colors.textSecondary, fontSize: 13 }}>{c.email}</p>
+                
+                {/* ⭐ SHOW AI ROLE TAG */}
+                {c.seekingRole ? (
+                    <span style={styles.roleTag}>
+                        {c.seekingRole}
+                    </span>
+                ) : (
+                    <span style={{...styles.roleTag, background: "#333", color: "#888"}}>
+                        General Applicant
+                    </span>
+                )}
+
+                <p style={{ margin: "10px 0 0", color: theme.colors.textSecondary, fontSize: 13 }}>{c.email}</p>
               </div>
               
               <button 
@@ -73,6 +108,15 @@ export default function EmployerDashboard() {
             </div>
           ))}
         </div>
+        
+        {/* Show message if no results found */}
+        {candidates.length > 0 && candidates.filter(c => 
+             (c.seekingRole || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
+             c.name.toLowerCase().includes(searchTerm.toLowerCase())
+        ).length === 0 && (
+            <p style={{color: "#888", textAlign: "center"}}>No candidates found matching "{searchTerm}"</p>
+        )}
+
       </div>
     </div>
   );
@@ -122,6 +166,18 @@ const styles = {
     fontSize: "12px",
     fontWeight: 700,
   },
+  // New Input Style
+  searchInput: {
+    padding: "12px 16px",
+    width: "100%",
+    maxWidth: "400px",
+    borderRadius: "8px",
+    border: "1px solid rgba(255,255,255,0.2)",
+    background: "rgba(0,0,0,0.3)",
+    color: "white",
+    outline: "none",
+    fontSize: "15px"
+  },
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
@@ -146,6 +202,17 @@ const styles = {
     placeItems: "center",
     fontWeight: 700,
     color: "#0b1224"
+  },
+  // New Role Tag Style
+  roleTag: {
+    display: "inline-block",
+    fontSize: "11px", 
+    background: "#a78bfa", 
+    color: "#000", 
+    padding: "4px 8px", 
+    borderRadius: "4px",
+    fontWeight: "bold",
+    marginTop: "5px"
   },
   connectBtn: {
     ...theme.button("primary"),
