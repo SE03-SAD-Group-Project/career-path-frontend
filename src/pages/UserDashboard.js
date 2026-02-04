@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import theme from "../theme"; 
-// Imports adjusted for 'src/pages/' folder structure
 import CareerForm from "../CareerForm"; 
 import ResumeEnhancer from "../components/ResumeEnhancer"; 
 
@@ -28,8 +27,8 @@ function UserDashboard() {
 
   const fetchDashboardData = async (userId) => {
     try {
-      // Fetch Job Requests
-      const reqRes = await axios.get(`http://localhost:5000/api/user/my-requests?userId=${userId}`);
+      // Fetch Requests
+      const reqRes = await axios.get(`http://localhost:5000/api/users/my-requests?userId=${userId}`);
       setRequests(reqRes.data.requests || []);
 
       // Fetch Saved Careers
@@ -43,8 +42,7 @@ function UserDashboard() {
   const handleDecision = async (requestId, decision) => {
     try {
       const status = decision === 'accept' ? 'ACCEPTED' : 'DENIED';
-      await axios.put(`http://localhost:5000/api/user/requests/${requestId}`, { status });
-      // Refresh Data to remove the handled request
+      await axios.put(`http://localhost:5000/api/users/requests/${requestId}`, { status });
       fetchDashboardData(user.id);
       alert(`Request ${decision}ed!`);
     } catch (e) {
@@ -56,7 +54,7 @@ function UserDashboard() {
 
   return (
     <div style={styles.page}>
-      {/* 1. PROFILE CARD (From your original Dashboard.js) */}
+      {/* 1. PROFILE CARD */}
       <div style={styles.fullWidthCard} className="card-animate">
         <div style={styles.profileHeader}>
           <div style={styles.profileLeft}>
@@ -84,9 +82,8 @@ function UserDashboard() {
         </div>
       </div>
 
-      {/* 2. NEW: JOB INQUIRIES SECTION */}
-      {/* This only shows if you have PENDING requests */}
-      {true && (
+      {/* 2. PENDING REQUESTS */}
+      {requests.filter(r => r.status === 'PENDING_EMPLOYEE').length > 0 && (
         <div style={styles.wideSection} className="card-animate">
           <h3 style={{...styles.title, color: theme.colors.accent, marginBottom: 20}}>
             🔔 New Job Inquiries
@@ -96,13 +93,13 @@ function UserDashboard() {
               <div key={req._id} style={styles.requestCard}>
                 <div>
                   <h4 style={{ margin: "0 0 5px 0", color: "#fff" }}>
-                    {req.employerId?.companyName || "A Recruiter"}
+                    {req.employerId?.name || "A Recruiter"}
                   </h4>
                   <p style={{ margin: 0, color: theme.colors.textSecondary, fontSize: 14 }}>
-                    has invited you to connect.
+                    from {req.employerId?.email} has invited you to connect.
                   </p>
                 </div>
-                <div style={{ display: "flex", gap: 10 }}>
+                <div style={styles.btnGroup}>
                   <button onClick={() => handleDecision(req._id, 'accept')} style={styles.acceptBtn}>Accept</button>
                   <button onClick={() => handleDecision(req._id, 'deny')} style={styles.denyBtn}>Decline</button>
                 </div>
@@ -112,7 +109,42 @@ function UserDashboard() {
         </div>
       )}
 
-      {/* 3. SAVED CAREERS */}
+      {/* 3. ACTIVE CONNECTIONS (With Email Contact) */}
+      {requests.filter(r => r.status === 'ACCEPTED').length > 0 && (
+        <div style={styles.wideSection} className="card-animate">
+          <h3 style={{...styles.title, color: "#22c55e", marginBottom: 20}}>
+            ✅ Active Connections
+          </h3>
+          <div style={{ display: "grid", gap: 15 }}>
+            {requests.filter(r => r.status === 'ACCEPTED').map((req) => (
+              <div key={req._id} style={styles.connectedCard}>
+                <div>
+                  <h4 style={{ margin: "0 0 5px 0", color: "#fff" }}>
+                    {req.employerId?.name || "Company"}
+                  </h4>
+                  <p style={{ margin: "4px 0 0", color: theme.colors.textSecondary, fontSize: 14 }}>
+                     Contact:{" "}
+                     <a 
+                       href={`mailto:${req.employerId?.email}`} 
+                       style={{color: theme.colors.accent, textDecoration: "underline"}}
+                     >
+                        {req.employerId?.email}
+                     </a>
+                  </p>
+                </div>
+                <div style={{textAlign: "right"}}>
+                   <span style={styles.pillSuccess}>Connected</span>
+                   <div style={{fontSize: "11px", color: theme.colors.textSecondary, marginTop: "5px"}}>
+                     {new Date(req.createdAt).toLocaleDateString()}
+                   </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 4. SAVED CAREERS */}
       {saved.length > 0 && (
         <div style={styles.wideSection} className="card-animate">
           <h3 style={{...styles.title, marginBottom: 20}}>Your Saved Paths</h3>
@@ -129,12 +161,10 @@ function UserDashboard() {
         </div>
       )}
 
-      {/* 4. CAREER FORM */}
+      {/* 5. TOOLS */}
       <div style={styles.wideSection} className="card-animate">
         <CareerForm fullWidth />
       </div>
-
-      {/* 5. RESUME ENHANCER */}
       <div style={styles.wideSection} className="card-animate">
         <ResumeEnhancer />
       </div>
@@ -142,7 +172,7 @@ function UserDashboard() {
   );
 }
 
-// --- STYLES (Merged from your Dashboard.js & Theme) ---
+// --- STYLES ---
 const styles = {
   page: {
     minHeight: "100vh",
@@ -241,7 +271,6 @@ const styles = {
     ...theme.button("primary"),
     whiteSpace: "nowrap",
   },
-  // NEW STYLES FOR REQUEST CARDS
   requestCard: {
     display: "flex",
     justifyContent: "space-between",
@@ -251,11 +280,23 @@ const styles = {
     border: `1px solid ${theme.colors.border}`,
     borderRadius: theme.radii.md
   },
+  connectedCard: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "16px",
+    background: "rgba(34, 197, 94, 0.05)",
+    border: `1px solid rgba(34, 197, 94, 0.2)`,
+    borderRadius: theme.radii.md
+  },
+  btnGroup: {
+    display: "flex",
+    gap: 10
+  },
   acceptBtn: {
     ...theme.button("success"),
     backgroundColor: "#22c55e", 
     backgroundImage: "none",
-    marginRight: 10
   },
   denyBtn: {
     ...theme.button("danger"),

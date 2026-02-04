@@ -1,192 +1,191 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import theme from "../theme";
 
 export default function AdminDashboard() {
-  // Existing State
-  const [careers, setCareers] = useState([]);
-  const [form, setForm] = useState({ 
-    title: "", 
-    description: "", 
-    requiredSkills: "", 
-    relatedInterests: ""
-  });
-  const [editingId, setEditingId] = useState(null);
-
-  // NEW: State for Requests
+  const navigate = useNavigate();
+  const [admin, setAdmin] = useState(null);
   const [requests, setRequests] = useState([]);
 
-  // Load all data (Careers + Requests)
-  async function load() {
-    try {
-      const careersRes = await axios.get("/api/admin/careers");
-      setCareers(careersRes.data.careers || []);
-
-      const requestsRes = await axios.get("/api/admin/connection-requests");
-      setRequests(requestsRes.data.requests || []);
-    } catch (err) {
-      console.error("Error loading data:", err);
-    }
-  }
-
   useEffect(() => {
-    load();
-  }, []);
+    // 1. Check Admin Login
+    const data = localStorage.getItem("user");
+    if (!data) {
+      navigate("/login");
+      return;
+    }
+    const parsed = JSON.parse(data);
+    if (parsed.role !== "admin") {
+      alert("Access Denied: Admins only.");
+      navigate("/dashboard");
+      return;
+    }
+    setAdmin(parsed);
 
-  // NEW: Handle Request Approval/Rejection
-  async function updateRequestStatus(id, newStatus) {
+    // 2. Fetch Pending Requests
+    fetchPendingRequests();
+  }, [navigate]);
+
+  const fetchPendingRequests = async () => {
     try {
-      await axios.put(`/api/admin/connection-requests/${id}`, { status: newStatus });
-      load(); // Refresh list
+      const res = await axios.get("http://localhost:5000/api/users/admin/pending-requests");
+      setRequests(res.data.requests || []);
     } catch (err) {
-      console.error("Failed to update status:", err);
-      alert("Error updating request status");
+      console.error("Error fetching admin requests", err);
     }
-  }
+  };
 
-  // Existing: Save (Create or Update)
-  async function save() {
-    const payload = {
-      title: form.title,
-      description: form.description,
-      requiredSkills: form.requiredSkills.split(",").map(s => s.trim()),
-      relatedInterests: form.relatedInterests.split(",").map(s => s.trim())
-    };
+  const handleDecision = async (requestId, decision) => {
+    try {
+      // If Approved -> Status becomes 'PENDING_EMPLOYEE' (Sent to Student)
+      // If Denied -> Status becomes 'DENIED'
+      const newStatus = decision === 'approve' ? 'PENDING_EMPLOYEE' : 'DENIED';
+      
+      await axios.put(`http://localhost:5000/api/users/requests/${requestId}`, {
+        status: newStatus
+      });
 
-    if (editingId) {
-      await axios.put(`/api/admin/careers/${editingId}`, payload);
-      setEditingId(null);
-    } else {
-      await axios.post("/api/admin/careers", payload);
+      alert(`Request ${decision}d successfully!`);
+      fetchPendingRequests(); // Refresh list
+    } catch (err) {
+      alert("Error updating request.");
     }
+  };
 
-    setForm({ title: "", description: "", requiredSkills: "", relatedInterests: "" });
-    load();
-  }
-
-  // Existing: Edit Mode Setup
-  async function edit(career) {
-    setEditingId(career._id);
-    setForm({
-      title: career.title,
-      description: career.description,
-      requiredSkills: (career.requiredSkills || []).join(", "),
-      relatedInterests: (career.relatedInterests || []).join(", ")
-    });
-  }
-
-  // Existing: Remove Career
-  async function remove(id) {
-    if (!window.confirm("Are you sure?")) return;
-    await axios.delete(`/api/admin/careers/${id}`);
-    load();
-  }
+  if (!admin) return null;
 
   return (
-    <div style={{ maxWidth: "900px", margin: "40px auto", padding: "20px" }}>
-      <h1 style={{ marginBottom: "20px" }}>Admin Dashboard</h1>
-
-      {/* NEW SECTION: Recruitment Requests */}
-      <section style={{ marginBottom: "40px", padding: "20px", border: "2px solid #007bff", borderRadius: "10px", backgroundColor: "#f8faff" }}>
-        <h2 style={{ marginTop: 0 }}>Pending Recruitment Requests</h2>
-        {requests.filter(r => r.status === 'PENDING_ADMIN').length === 0 ? (
-          <p>No pending requests.</p>
-        ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse", background: "white" }}>
-            <thead>
-              <tr style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>
-                <th style={{ padding: "10px" }}>Employer</th>
-                <th style={{ padding: "10px" }}>Target Employee</th>
-                <th style={{ padding: "10px" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {requests.filter(r => r.status === 'PENDING_ADMIN').map(req => (
-                <tr key={req._id} style={{ borderBottom: "1px solid #eee" }}>
-                  <td style={{ padding: "10px" }}>{req.employerId?.companyName || req.employerId?.name || "Unknown"}</td>
-                  <td style={{ padding: "10px" }}>{req.employeeId?.name || "Unknown"}</td>
-                  <td style={{ padding: "10px" }}>
-                    <button 
-                      onClick={() => updateRequestStatus(req._id, 'PENDING_EMPLOYEE')}
-                      style={{ marginRight: "10px", padding: "5px 10px", backgroundColor: "#28a745", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}
-                    >
-                      Approve
-                    </button>
-                    <button 
-                      onClick={() => updateRequestStatus(req._id, 'REJECTED_BY_ADMIN')}
-                      style={{ padding: "5px 10px", backgroundColor: "#dc3545", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}
-                    >
-                      Reject
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
-
-      {/* Existing Section: Add/Edit Career Form */}
-      <div style={{ marginBottom: "30px", padding: "20px", border: "1px solid #ddd", borderRadius: "10px" }}>
-        <h2>{editingId ? "Edit Career" : "Add New Career"}</h2>
-        <input
-          placeholder="Title"
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-          style={{ width: "100%", marginBottom: "10px", padding: "10px" }}
-        />
-        <textarea
-          placeholder="Description"
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-          style={{ width: "100%", marginBottom: "10px", padding: "10px" }}
-        />
-        <input
-          placeholder="Required skills (comma separated)"
-          value={form.requiredSkills}
-          onChange={(e) => setForm({ ...form, requiredSkills: e.target.value })}
-          style={{ width: "100%", marginBottom: "10px", padding: "10px" }}
-        />
-        <input
-          placeholder="Related interests (comma separated)"
-          value={form.relatedInterests}
-          onChange={(e) => setForm({ ...form, relatedInterests: e.target.value })}
-          style={{ width: "100%", marginBottom: "10px", padding: "10px" }}
-        />
-
-        <button onClick={save} style={{ padding: "10px 20px", cursor: "pointer" }}>
-          {editingId ? "Save Changes" : "Add Career"}
-        </button>
-
-        {editingId && (
-          <button
-            onClick={() => {
-              setEditingId(null);
-              setForm({ title: "", description: "", requiredSkills: "", relatedInterests: "" });
-            }}
-            style={{ padding: "10px 20px", marginLeft: "10px", cursor: "pointer" }}
-          >
-            Cancel
-          </button>
-        )}
+    <div style={styles.page}>
+      {/* Header */}
+      <div style={styles.fullWidthCard} className="card-animate">
+        <h2 style={styles.title}>Admin Control Center</h2>
+        <p style={styles.subText}>Logged in as {admin.name}</p>
+        <div style={styles.pillRow}>
+            <span style={styles.pillDanger}>System Admin</span>
+        </div>
       </div>
 
-      {/* Existing Section: List Careers */}
-      <h2>All Careers</h2>
-      {careers.map((c) => (
-        <div key={c._id} style={{ padding: "15px", border: "1px solid #ddd", marginBottom: "10px", borderRadius: "10px" }}>
-          <h3>{c.title}</h3>
-          <p>{c.description}</p>
-          <p><strong>Skills:</strong> {(c.requiredSkills || []).join(", ")}</p>
-          <p><strong>Interests:</strong> {(c.relatedInterests || []).join(", ")}</p>
+      {/* PENDING APPROVALS SECTION */}
+      <div style={styles.wideSection} className="card-animate">
+        <h3 style={{...styles.title, marginBottom: 20}}>
+           Connection Approvals ({requests.length})
+        </h3>
 
-          <button onClick={() => edit(c)} style={{ padding: "6px 12px", marginRight: "10px", cursor: "pointer" }}>
-            Edit
-          </button>
-          <button onClick={() => remove(c._id)} style={{ padding: "6px 12px", cursor: "pointer" }}>
-            Delete
-          </button>
-        </div>
-      ))}
+        {requests.length === 0 ? (
+          <p style={{color: theme.colors.textSecondary}}>No pending requests.</p>
+        ) : (
+          <div style={styles.listContainer}>
+            {requests.map((req) => (
+              <div key={req._id} style={styles.requestItem}>
+                <div style={{ flex: 1 }}>
+                  <div style={styles.row}>
+                    <strong style={{color: "#fff"}}>Employer:</strong> 
+                    <span style={{color: theme.colors.textSecondary}}> {req.employerId?.name} ({req.employerId?.email})</span>
+                  </div>
+                  <div style={styles.row}>
+                    <strong style={{color: "#fff"}}>Candidate:</strong> 
+                    <span style={{color: theme.colors.textSecondary}}> {req.employeeId?.name} ({req.employeeId?.email})</span>
+                  </div>
+                  <div style={{fontSize: "12px", color: theme.colors.textSecondary, marginTop: 5}}>
+                    Requested on: {new Date(req.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+
+                <div style={styles.btnGroup}>
+                  <button 
+                    onClick={() => handleDecision(req._id, 'approve')}
+                    style={styles.approveBtn}
+                  >
+                    Approve
+                  </button>
+                  <button 
+                    onClick={() => handleDecision(req._id, 'deny')}
+                    style={styles.denyBtn}
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    padding: "0 12px 40px",
+    display: "flex",
+    flexDirection: "column",
+    gap: theme.spacing.lg,
+    maxWidth: "1000px",
+    margin: "0 auto"
+  },
+  fullWidthCard: {
+    ...theme.glassPanel("24px"),
+    width: "100%",
+    padding: "32px",
+  },
+  wideSection: {
+    ...theme.glassPanel("24px"),
+    width: "100%",
+    padding: "40px",
+  },
+  title: {
+    fontSize: "22px",
+    margin: 0,
+    fontWeight: 700,
+    color: theme.colors.textPrimary
+  },
+  subText: {
+    fontSize: "14px",
+    color: theme.colors.textSecondary,
+    margin: "4px 0 0",
+  },
+  pillRow: { display: "flex", marginTop: theme.spacing.sm },
+  pillDanger: {
+    padding: "8px 12px",
+    background: "rgba(239,68,68,0.15)",
+    borderRadius: "999px",
+    border: "1px solid rgba(239,68,68,0.3)",
+    color: "#fca5a5",
+    fontSize: "12px",
+    fontWeight: 700,
+  },
+  listContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "15px"
+  },
+  requestItem: {
+    background: "rgba(255,255,255,0.03)",
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.radii.md,
+    padding: "20px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 15
+  },
+  row: { marginBottom: 4 },
+  btnGroup: { display: "flex", gap: 10 },
+  approveBtn: {
+    ...theme.button("success"),
+    backgroundColor: "#10b981",
+    backgroundImage: "none",
+    padding: "8px 16px",
+    fontSize: "13px"
+  },
+  denyBtn: {
+    ...theme.button("danger"),
+    backgroundColor: "#ef4444",
+    backgroundImage: "none",
+    padding: "8px 16px",
+    fontSize: "13px"
+  }
+};

@@ -18,7 +18,8 @@ export default function EmployerDashboard() {
 
   const fetchCandidates = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/user/candidates");
+      // ⭐ FIXED: Added 's' to 'users' to match your Backend Route
+      const res = await axios.get("http://localhost:5000/api/users/candidates");
       setCandidates(res.data.candidates || []);
     } catch (err) {
       console.error("Error fetching candidates", err);
@@ -28,7 +29,8 @@ export default function EmployerDashboard() {
   const sendRequest = async (employeeId) => {
     if (!user) return alert("Please login first");
     try {
-      await axios.post("http://localhost:5000/api/user/request-connection", {
+      // ⭐ FIXED: Added 's' here too for consistency
+      await axios.post("http://localhost:5000/api/users/request-connection", {
         employerId: user.id,
         employeeId: employeeId
       });
