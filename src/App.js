@@ -1,15 +1,19 @@
-import JDMatch from "./pages/JDMatch";
-import GrowthTracker from "./pages/GrowthTracker";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminCareers from "./pages/AdminCareers";
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Register from "./Register";
-import Login from "./Login";
-import Dashboard from "./Dashboard";
 import Navbar from "./components/Navbar";
 import theme from "./theme";
 
+// Import Pages
+import Register from "./Register";
+import Login from "./Login";
+import JDMatch from "./pages/JDMatch";
+import GrowthTracker from "./pages/GrowthTracker";
+
+// Import NEW Dashboards
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminCareers from "./pages/AdminCareers";
+import UserDashboard from "./pages/UserDashboard";     // <--- The fixed Student Dashboard
+import EmployerDashboard from "./pages/EmployerDashboard"; // <--- The fixed Employer Dashboard
 
 function App() {
   return (
@@ -33,20 +37,24 @@ function App() {
 
           <main style={styles.content}>
             <Routes>
-              {/* User-facing routes */}
+              {/* Public Routes */}
               <Route path="/" element={<Register />} />
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              
+              {/* Feature Routes */}
               <Route path="/growth" element={<GrowthTracker />} />
-
               <Route path="/jd-match" element={<JDMatch />} />
 
-              {/* Admin routes (no auth yet – optional later) */}
+              {/* --- ROLE BASED DASHBOARDS --- */}
+              <Route path="/user-dashboard" element={<UserDashboard />} />
+              <Route path="/employer-dashboard" element={<EmployerDashboard />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/careers" element={<AdminCareers />} />
+              
+              {/* Fallback for old links */}
+              <Route path="/dashboard" element={<UserDashboard />} />
             </Routes>
-
           </main>
         </div>
       </div>
@@ -97,22 +105,6 @@ const styles = {
     marginLeft: "auto",
     marginRight: "auto",
     lineHeight: 1.6,
-  },
-  pills: {
-    display: "flex",
-    gap: "10px",
-    justifyContent: "center",
-    flexWrap: "wrap",
-    marginTop: theme.spacing.md,
-  },
-  pill: {
-    padding: "8px 12px",
-    borderRadius: theme.radii.md,
-    background: "rgba(103, 232, 249, 0.1)",
-    border: `1px solid ${theme.colors.border}`,
-    color: theme.colors.textPrimary,
-    fontSize: "13px",
-    backdropFilter: `blur(${theme.blur.medium})`,
   },
   content: {
     position: "relative",

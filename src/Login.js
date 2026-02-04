@@ -20,8 +20,19 @@ function Login() {
       const res = await apiClient.post("/users/login", formData);
 
       if (res.data.message === "Login successful") {
-        localStorage.setItem("user", JSON.stringify(res.data.user));
-        navigate("/dashboard");
+        const user = res.data.user;
+        localStorage.setItem("user", JSON.stringify(user));
+
+        // --- ROLE BASED REDIRECT ---
+        if (user.role === "employer") {
+          navigate("/employer-dashboard");
+        } else if (user.role === "admin") {
+          navigate("/admin");
+        } else {
+          // Default to student/user dashboard
+          navigate("/user-dashboard");
+        }
+        // ---------------------------
       } else {
         alert(res.data.message);
       }
