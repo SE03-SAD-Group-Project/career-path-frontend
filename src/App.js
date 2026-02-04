@@ -12,8 +12,8 @@ import GrowthTracker from "./pages/GrowthTracker";
 // Import NEW Dashboards
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminCareers from "./pages/AdminCareers";
-import UserDashboard from "./pages/UserDashboard";     // <--- The fixed Student Dashboard
-import EmployerDashboard from "./pages/EmployerDashboard"; // <--- The fixed Employer Dashboard
+import UserDashboard from "./pages/UserDashboard";     // <--- Using the New File
+import EmployerDashboard from "./pages/EmployerDashboard"; 
 
 function App() {
   return (
@@ -52,7 +52,7 @@ function App() {
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/careers" element={<AdminCareers />} />
               
-              {/* Fallback for old links */}
+              {/* Fallback: Old /dashboard link now goes to UserDashboard */}
               <Route path="/dashboard" element={<UserDashboard />} />
             </Routes>
           </main>
