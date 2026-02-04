@@ -86,7 +86,7 @@ function UserDashboard() {
 
       {/* 2. NEW: JOB INQUIRIES SECTION */}
       {/* This only shows if you have PENDING requests */}
-      {requests.filter(r => r.status === 'PENDING_EMPLOYEE').length > 0 && (
+      {true && (
         <div style={styles.wideSection} className="card-animate">
           <h3 style={{...styles.title, color: theme.colors.accent, marginBottom: 20}}>
             🔔 New Job Inquiries
