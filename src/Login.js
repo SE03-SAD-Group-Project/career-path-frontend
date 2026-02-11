@@ -45,7 +45,7 @@ export default function Login() {
     <div style={styles.container}>
       <div style={styles.card} className="card-animate">
         <h2 style={styles.title}>Login</h2>
-        <p style={styles.subtitle}>Welcome back to CareerCluster</p>
+        <p style={styles.subtitle}>Welcome back to CareerClusteryoyo</p>
         
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.inputGroup}>
